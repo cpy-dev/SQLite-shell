@@ -16,7 +16,7 @@ class App(QMainWindow):
         self.setFixedSize(1000, 700)
 
         self.filePath = QLineEdit(self)
-        self.filePath.setPlaceholderText('File Path')
+        self.filePath.setPlaceholderText('DataBase File Path')
         self.filePath.setFixedWidth(500)
         self.filePath.move(175, 20)
 
@@ -25,7 +25,7 @@ class App(QMainWindow):
         self.loadDb.move(725, 20)
 
         self.textZone = QPlainTextEdit(self)
-        self.textZone.setPlaceholderText('Command(s) to execute')
+        self.textZone.setPlaceholderText('Command to execute')
         self.textZone.setFixedSize(470, 560)
         self.textZone.move(20, 70)
 
