@@ -1,7 +1,7 @@
 # SQLite-shell
 ### Lightweight cross platform SQLite shell
 
-# Installation
+# Setup
 
     $ ./setup.sh
     
