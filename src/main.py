@@ -2,7 +2,7 @@ import sqlite3
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import QMessageBox
 
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 class App(QMainWindow):
     def __init__(self):
@@ -116,6 +116,10 @@ class App(QMainWindow):
                     for i in range(len(dataList)): # each row
                         for j in range(len(dataList[0])): # each column
                             self.table.setItem(i, j, QTableWidgetItem(dataList[i][j]))
+                else:
+                    self.table.setRowCount(0)
+                    self.table.setColumnCount(0)
+                    self.table.clear()
         else:
             results = [] # array of result for multi comand script
 
@@ -182,7 +186,10 @@ class App(QMainWindow):
                     row += 1
 
                     commandIndex += 1
-
+                else:
+                    self.table.setRowCount(0)
+                    self.table.setColumnCount(0)
+                    self.table.clear()
     def getTableName(self, cmd):
         command = cmd.lower()
         index = command.index('from')
