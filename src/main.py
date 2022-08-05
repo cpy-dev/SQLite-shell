@@ -2,6 +2,8 @@ import sqlite3
 from PyQt5.Qt import *
 from PyQt5.QtGui import *
 
+__version__ = '1.1.0'
+
 class App(QMainWindow):
     def __init__(self):
         super(App, self).__init__()
@@ -16,7 +18,7 @@ class App(QMainWindow):
         self.setFixedSize(1000, 700)
 
         self.filePath = QLineEdit(self)
-        self.filePath.setPlaceholderText('DataBase File Path')
+        self.filePath.setPlaceholderText('File Path')
         self.filePath.setFixedWidth(500)
         self.filePath.move(175, 20)
 
@@ -25,14 +27,14 @@ class App(QMainWindow):
         self.loadDb.move(725, 20)
 
         self.textZone = QPlainTextEdit(self)
-        self.textZone.setPlaceholderText('Command to execute')
+        self.textZone.setPlaceholderText('Command(s) to execute')
         self.textZone.setFixedSize(470, 560)
         self.textZone.move(20, 70)
 
         self.run = QPushButton('Run Script', self)
         self.run.setFixedWidth(470)
         self.run.move(20, 650)
-        self.run.clicked.connect(self.execute)
+        self.run.clicked.connect(self.render)
 
         self.table = QTableWidget(self)
         self.table.setFixedSize(470, 610)
@@ -41,61 +43,192 @@ class App(QMainWindow):
     def loadDataBase(self):
         self.db = sqlite3.connect(self.filePath.text())
 
-    def execute(self):
+    def scriptAnalysis(self):
         self.cmd = self.textZone.toPlainText()
+        cmd = self.textZone.toPlainText()
+        cmds = []
 
-        try:
-            data = self.db.execute(self.textZone.toPlainText())
-        except:
-            pass
+        if ';' in cmd:
+            while ';' in cmd:
+                semiColonIndex = cmd.index(';')
+
+                cmds.append(cmd[0:semiColonIndex])
+                cmd = cmd[semiColonIndex+1:len(cmd)]
+        cmds.append(cmd)
+
+        return cmds
+
+    def render(self):
+        commands = self.scriptAnalysis()
+        if len(commands) == 1:
+            try:
+                data = self.db.execute(commands[0])
+            except:
+                print('Execution error')
+            else:
+                data = data.fetchall()
+
+                # gets size of aouput data
+                rows = len(data)
+                cols = len(data[0])
+
+                print(data)
+
+                # set table dimensions
+                self.table.setColumnCount(cols)
+                self.table.setRowCount(rows)
+
+                # gets table name
+                tableName = self.getTableName(commands[0])
+                # setter for column names in table
+                if 'select *' in commands[0]:
+                    dataCols = self.db.execute("pragma table_info(" + tableName + ")")
+                    dataCols = dataCols.fetchall()
+
+                    k = 0
+                    for column in dataCols:
+                        self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column[1]))
+                        k += 1
+                elif  ' as ' in commands[0]:
+                    dataCols = self.getAsName(commands[0])
+
+                    k = 0
+                    for column in dataCols:
+                        self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column))
+                        k += 1
+
+                # elements extraction from command result
+                dataList = []
+                for row in data:
+                    subList = []
+
+                    for element in row:
+                        subList.append(str(element))
+                    dataList.append(subList)
+
+                # render on the table of the elements
+                for i in range(len(dataList)): # each row
+                    for j in range(len(dataList[0])): # each column
+                        self.table.setItem(i, j, QTableWidgetItem(dataList[i][j]))
         else:
-            data = data.fetchall()
-            self.render(data)
+            results = [] # array of result for multi comand script
 
-    def render(self, data):
-        rows = len(data)
-        cols = len(data[0])
+            for command in commands:
+                result = self.db.execute(command)
+                results.append(result.fetchall())
+            print(results)
+            maxColLength = 0
+            rowLength = 0
 
-        self.table.setColumnCount(cols)
-        self.table.setRowCount(rows)
+            # setter for table dimensions
+            for result in results:
+                rowLength += len(result)+2
+                colLength = len(result[0])
+                if colLength > maxColLength:
+                    maxColLength = colLength
+            print(maxColLength, rowLength)
 
-        tableName = self.getTableName()
+            self.table.setRowCount(rowLength)
+            self.table.setColumnCount(maxColLength)
 
-        dataCols = self.db.execute("pragma table_info(" + tableName + ")")
-        dataCols = dataCols.fetchall()
+            commandIndex = 0
+            row = 0
 
-        k = 0
+            for result in results:
+                tableName = self.getTableName(commands[commandIndex])
+                if 'select *' in commands[commandIndex]:
+                    dataCols = self.db.execute("pragma table_info(" + tableName + ")")
+                    dataCols = dataCols.fetchall()
+                    k = 0
+                    print(dataCols)
+                    for column in dataCols:
+                        self.table.setItem(row, k, QTableWidgetItem(column[1]))
+                        k += 1
+                    row += 1
+                elif ' as ' in self.cmd:
+                    dataCols = self.getAsName(commands[commandIndex])
+                    k = 0
+                    print(dataCols)
 
-        for column in dataCols:
-            self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column[1]))
-            k += 1
+                    for column in dataCols:
+                        self.table.setItem(row, k, QTableWidgetItem(column))
+                        k += 1
+                    row += 1
 
-        dataList = []
+                dataList = []
+                for resultRow in result:
+                    subList = []
 
-        for row in data:
-            subList = []
+                    for element in resultRow:
+                        subList.append(str(element))
+                    dataList.append(subList)
 
-            for element in row:
-                subList.append(str(element))
-            dataList.append(subList)
+                print(dataList)
 
-        for i in range(len(dataList)):
-            for j in range(len(dataList[0])):
-                self.table.setItem(i, j, QTableWidgetItem(dataList[i][j]))
+                for i in range(len(dataList)):
+                    for j in range(len(dataList[0])):
+                        self.table.setItem(row, j, QTableWidgetItem(dataList[i][j]))
+                    row += 1
 
-    def getTableName(self):
-        cmd = self.cmd.lower()
-        index = cmd.index('from')
+                for j in range(maxColLength):
+                    self.table.setItem(row, j, QTableWidgetItem('---'))
+
+                row += 1
+
+                commandIndex += 1
+
+    def getTableName(self, cmd):
+        command = cmd.lower()
+        index = command.index('from')
         index += 5
-        while cmd[index] == ' ':
+        while command[index] == ' ':
             index += 1
 
         tableName = ''
-        while index != len(cmd) and cmd[index] != ' ' and cmd[index] != ';':
-            tableName += cmd[index]
+        while index != len(command) and command[index] != ' ' and command[index] != ';':
+            tableName += command[index]
             index += 1
 
         return tableName
+
+    def getAsName(self, command):
+        index = command.index(' as ')
+
+        index += 4
+
+        while command[index] == ' ':
+            index += 1
+
+        asNames = []
+
+        if command[index] == '(':
+            index += 1
+            asNamesScript = ''
+
+            while command[index] != ')':
+                asNamesScript += command[index]
+                index += 1
+
+            if ',' in asNamesScript:
+                asNewName = ''
+
+                while index != len(asNamesScript):
+                    if command[index] == ';':
+                        asNames.append(asNewName)
+                        asNewName = ''
+                    else:
+                        asNewName += command[index]
+                    index += 1
+            else:
+                asNames.append(asNamesScript)
+        else:
+            asName = ''
+            while command[index] != ' ':
+                asName += command[index]
+                index += 1
+            asNames.append(asName)
+
+        return asNames
 
 if __name__ == '__main__':
     app = QApplication([])
