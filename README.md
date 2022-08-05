@@ -26,3 +26,6 @@ Bug fix
 
 ### Version 1.1.2
 Bug fix and error popup added
+
+### Version 1.1.3
+Output cancellation implemented
