@@ -1,8 +1,8 @@
 import sqlite3
 from PyQt5.Qt import *
-from PyQt5.QtGui import *
+from PyQt5.QtWidgets import QMessageBox
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 class App(QMainWindow):
     def __init__(self):
@@ -16,6 +16,7 @@ class App(QMainWindow):
     def makeInterface(self):
         self.setStyleSheet('background-color: #1F2633; color: white;')
         self.setFixedSize(1000, 700)
+        self.setWindowTitle('SQLite-Shell')
 
         self.filePath = QLineEdit(self)
         self.filePath.setPlaceholderText('File Path')
@@ -58,58 +59,63 @@ class App(QMainWindow):
 
         return cmds
 
+    def makeErrorPopup(self):
+        popup = QMessageBox()
+        popup.setWindowTitle('Error Message')
+        popup.setText('Execution error: how may have made a syntax error or you may have not loaded properly you database file. Check your script and retry')
+        popup.exec_()
+
     def render(self):
         commands = self.scriptAnalysis()
         if len(commands) == 1:
             try:
                 data = self.db.execute(commands[0])
             except:
-                print('Execution error')
+                self.makeErrorPopup()
             else:
                 data = data.fetchall()
+                if len(data) != 0:
+                    self.db.commit()
+                    # gets size of aouput data
+                    rows = len(data)
+                    cols = len(data[0])
 
-                # gets size of aouput data
-                rows = len(data)
-                cols = len(data[0])
+                    # set table dimensions
+                    self.table.setColumnCount(cols)
+                    self.table.setRowCount(rows)
 
-                print(data)
+                    # gets table name
+                    tableName = self.getTableName(commands[0])
+                    # setter for column names in table
+                    if 'select *' in commands[0]:
+                        dataCols = self.db.execute("pragma table_info(" + tableName + ")")
+                        dataCols = dataCols.fetchall()
 
-                # set table dimensions
-                self.table.setColumnCount(cols)
-                self.table.setRowCount(rows)
+                        k = 0
+                        for column in dataCols:
+                            self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column[1]))
+                            k += 1
+                    elif  ' as ' in commands[0]:
+                        dataCols = self.getAsName(commands[0])
 
-                # gets table name
-                tableName = self.getTableName(commands[0])
-                # setter for column names in table
-                if 'select *' in commands[0]:
-                    dataCols = self.db.execute("pragma table_info(" + tableName + ")")
-                    dataCols = dataCols.fetchall()
+                        k = 0
+                        for column in dataCols:
+                            self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column))
+                            k += 1
 
-                    k = 0
-                    for column in dataCols:
-                        self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column[1]))
-                        k += 1
-                elif  ' as ' in commands[0]:
-                    dataCols = self.getAsName(commands[0])
+                    # elements extraction from command result
+                    dataList = []
+                    for row in data:
+                        subList = []
 
-                    k = 0
-                    for column in dataCols:
-                        self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column))
-                        k += 1
+                        for element in row:
+                            subList.append(str(element))
+                        dataList.append(subList)
 
-                # elements extraction from command result
-                dataList = []
-                for row in data:
-                    subList = []
-
-                    for element in row:
-                        subList.append(str(element))
-                    dataList.append(subList)
-
-                # render on the table of the elements
-                for i in range(len(dataList)): # each row
-                    for j in range(len(dataList[0])): # each column
-                        self.table.setItem(i, j, QTableWidgetItem(dataList[i][j]))
+                    # render on the table of the elements
+                    for i in range(len(dataList)): # each row
+                        for j in range(len(dataList[0])): # each column
+                            self.table.setItem(i, j, QTableWidgetItem(dataList[i][j]))
         else:
             results = [] # array of result for multi comand script
 
@@ -117,10 +123,10 @@ class App(QMainWindow):
                 try:
                     result = self.db.execute(command)
                 except:
-                    pass
+                    self.makeErrorPopup()
                 else:
                     results.append(result.fetchall())
-            print(results)
+                    self.db.commit()
             maxColLength = 0
             rowLength = 0
 
@@ -130,7 +136,6 @@ class App(QMainWindow):
                 colLength = len(result[0])
                 if colLength > maxColLength:
                     maxColLength = colLength
-            print(maxColLength, rowLength)
 
             self.table.setRowCount(rowLength)
             self.table.setColumnCount(maxColLength)
@@ -139,47 +144,44 @@ class App(QMainWindow):
             row = 0
 
             for result in results:
-                tableName = self.getTableName(commands[commandIndex])
-                if 'select *' in commands[commandIndex]:
-                    dataCols = self.db.execute("pragma table_info(" + tableName + ")")
-                    dataCols = dataCols.fetchall()
-                    k = 0
-                    print(dataCols)
-                    for column in dataCols:
-                        self.table.setItem(row, k, QTableWidgetItem(column[1]))
-                        k += 1
+                if len(result) != 0:
+                    tableName = self.getTableName(commands[commandIndex])
+                    if 'select *' in commands[commandIndex]:
+                        dataCols = self.db.execute("pragma table_info(" + tableName + ")")
+                        dataCols = dataCols.fetchall()
+                        k = 0
+                        for column in dataCols:
+                            self.table.setItem(row, k, QTableWidgetItem(column[1]))
+                            k += 1
+                        row += 1
+                    elif ' as ' in commands[commandIndex]:
+                        dataCols = self.getAsName(commands[commandIndex])
+                        k = 0
+
+                        for column in dataCols:
+                            self.table.setItem(row, k, QTableWidgetItem(column))
+                            k += 1
+                        row += 1
+
+                    dataList = []
+                    for resultRow in result:
+                        subList = []
+
+                        for element in resultRow:
+                            subList.append(str(element))
+                        dataList.append(subList)
+
+                    for i in range(len(dataList)):
+                        for j in range(len(dataList[0])):
+                            self.table.setItem(row, j, QTableWidgetItem(dataList[i][j]))
+                        row += 1
+
+                    for j in range(maxColLength):
+                        self.table.setItem(row, j, QTableWidgetItem('---'))
+
                     row += 1
-                elif ' as ' in commands[commandIndex]:
-                    dataCols = self.getAsName(commands[commandIndex])
-                    k = 0
-                    print(dataCols)
 
-                    for column in dataCols:
-                        self.table.setItem(row, k, QTableWidgetItem(column))
-                        k += 1
-                    row += 1
-
-                dataList = []
-                for resultRow in result:
-                    subList = []
-
-                    for element in resultRow:
-                        subList.append(str(element))
-                    dataList.append(subList)
-
-                print(dataList)
-
-                for i in range(len(dataList)):
-                    for j in range(len(dataList[0])):
-                        self.table.setItem(row, j, QTableWidgetItem(dataList[i][j]))
-                    row += 1
-
-                for j in range(maxColLength):
-                    self.table.setItem(row, j, QTableWidgetItem('---'))
-
-                row += 1
-
-                commandIndex += 1
+                    commandIndex += 1
 
     def getTableName(self, cmd):
         command = cmd.lower()
