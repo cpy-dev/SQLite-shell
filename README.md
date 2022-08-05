@@ -7,6 +7,10 @@
     
 Before trying to execute the application, it is needed to run "setup.sh": it installs the needed dependencies and allows sqliteshell.sh to be executed.
 
+On some systems, it is required to get permission to execute setup.sh. This is the command for doing that:
+    
+    $ sudo chmod +x setup.sh
+
 After the setup execution, you can execute sqliteshell.sh and use SQLite Shell
 
 # Usage
