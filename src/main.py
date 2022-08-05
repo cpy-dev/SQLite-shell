@@ -2,7 +2,7 @@ import sqlite3
 from PyQt5.Qt import *
 from PyQt5.QtGui import *
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 class App(QMainWindow):
     def __init__(self):
@@ -114,8 +114,12 @@ class App(QMainWindow):
             results = [] # array of result for multi comand script
 
             for command in commands:
-                result = self.db.execute(command)
-                results.append(result.fetchall())
+                try:
+                    result = self.db.execute(command)
+                except:
+                    pass
+                else:
+                    results.append(result.fetchall())
             print(results)
             maxColLength = 0
             rowLength = 0
@@ -145,7 +149,7 @@ class App(QMainWindow):
                         self.table.setItem(row, k, QTableWidgetItem(column[1]))
                         k += 1
                     row += 1
-                elif ' as ' in self.cmd:
+                elif ' as ' in commands[commandIndex]:
                     dataCols = self.getAsName(commands[commandIndex])
                     k = 0
                     print(dataCols)
