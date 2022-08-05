@@ -19,3 +19,6 @@ Added support for multiple commands run, updated rendering system
 
 ### Version 1.1.1
 Bug fix
+
+### Version 1.1.2
+Bug fix and error popup added
