@@ -16,3 +16,6 @@ Remember to enter the full file path of the database in the given space, and to 
 # Updates
 ### Version 1.1.0
 Added support for multiple commands run, updated rendering system
+
+### Version 1.1.1
+Bug fix
