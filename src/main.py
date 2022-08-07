@@ -2,7 +2,7 @@ import sqlite3
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import QMessageBox
 
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 class App(QMainWindow):
     def __init__(self):
@@ -67,6 +67,7 @@ class App(QMainWindow):
 
     def render(self):
         commands = self.scriptAnalysis()
+        self.table.clear()
         if len(commands) == 1:
             try:
                 data = self.db.execute(commands[0])
@@ -84,24 +85,13 @@ class App(QMainWindow):
                     self.table.setColumnCount(cols)
                     self.table.setRowCount(rows)
 
-                    # gets table name
-                    tableName = self.getTableName(commands[0])
                     # setter for column names in table
-                    if 'select *' in commands[0]:
-                        dataCols = self.db.execute("pragma table_info(" + tableName + ")")
-                        dataCols = dataCols.fetchall()
+                    columnNames = self.columnsAnalysis(commands[0])
+                    k = 0
 
-                        k = 0
-                        for column in dataCols:
-                            self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column[1]))
-                            k += 1
-                    elif  ' as ' in commands[0]:
-                        dataCols = self.getAsName(commands[0])
-
-                        k = 0
-                        for column in dataCols:
-                            self.table.setHorizontalHeaderItem(k, QTableWidgetItem(column))
-                            k += 1
+                    for columnName in columnNames:
+                        self.table.setHorizontalHeaderItem(k, QTableWidgetItem(columnName))
+                        k += 1
 
                     # elements extraction from command result
                     dataList = []
@@ -149,23 +139,14 @@ class App(QMainWindow):
 
             for result in results:
                 if len(result) != 0:
-                    tableName = self.getTableName(commands[commandIndex])
-                    if 'select *' in commands[commandIndex]:
-                        dataCols = self.db.execute("pragma table_info(" + tableName + ")")
-                        dataCols = dataCols.fetchall()
-                        k = 0
-                        for column in dataCols:
-                            self.table.setItem(row, k, QTableWidgetItem(column[1]))
-                            k += 1
-                        row += 1
-                    elif ' as ' in commands[commandIndex]:
-                        dataCols = self.getAsName(commands[commandIndex])
-                        k = 0
+                    # setter for column names in table
+                    columnNames = self.columnsAnalysis(commands[commandIndex])
+                    k = 0
 
-                        for column in dataCols:
-                            self.table.setItem(row, k, QTableWidgetItem(column))
-                            k += 1
-                        row += 1
+                    for columnName in columnNames:
+                        self.table.setItem(row, k, QTableWidgetItem(columnName))
+                        k += 1
+                    row += 1
 
                     dataList = []
                     for resultRow in result:
@@ -190,6 +171,7 @@ class App(QMainWindow):
                     self.table.setRowCount(0)
                     self.table.setColumnCount(0)
                     self.table.clear()
+
     def getTableName(self, cmd):
         command = cmd.lower()
         index = command.index('from')
@@ -204,44 +186,47 @@ class App(QMainWindow):
 
         return tableName
 
-    def getAsName(self, command):
-        index = command.index(' as ')
+    def columnsAnalysis(self, command):
+        selectIndex = command.index('select')
+        fromIndex = command.index('from')
+        selectIndex += 6
 
-        index += 4
+        columns = command[selectIndex:fromIndex]
+        colNames = []
 
-        while command[index] == ' ':
-            index += 1
+        if columns.replace(' ', '') == '*':
+            tableName = self.getTableName(command)
 
-        asNames = []
+            dataCols = self.db.execute("pragma table_info(" + tableName + ")")
+            dataCols = dataCols.fetchall()
 
-        if command[index] == '(':
-            index += 1
-            asNamesScript = ''
-
-            while command[index] != ')':
-                asNamesScript += command[index]
-                index += 1
-
-            if ',' in asNamesScript:
-                asNewName = ''
-
-                while index != len(asNamesScript):
-                    if command[index] == ';':
-                        asNames.append(asNewName)
-                        asNewName = ''
-                    else:
-                        asNewName += command[index]
-                    index += 1
-            else:
-                asNames.append(asNamesScript)
+            for column in dataCols:
+                colNames.append(column[1])
         else:
-            asName = ''
-            while command[index] != ' ':
-                asName += command[index]
-                index += 1
-            asNames.append(asName)
+            columnsList = columns.split(', ')
 
-        return asNames
+            for column in columnsList:
+                if ' as ' in column:
+                    nameIndex = column.index(' as ')
+                    nameIndex += 4
+
+                    name = column[nameIndex:len(column)]
+                    name = name.replace(' ', '')
+
+                    colNames.append(name)
+                else:
+                    columnName = column.replace(' ', '')
+                    if columnName == '*':
+                        tableName = self.getTableName(command)
+
+                        dataCols = self.db.execute("pragma table_info(" + tableName + ")")
+                        dataCols = dataCols.fetchall()
+
+                        for column in dataCols:
+                            colNames.append(column[1])
+                    else:
+                        colNames.append(columnName)
+        return colNames
 
 if __name__ == '__main__':
     app = QApplication([])
