@@ -3,13 +3,33 @@
 
 # Installation
 
-Download the .deb file corresponding with your system. Example: 
+Download the .deb file corresponding with your system. 
 
-    $ curl https://github.com/CargoCodes/SQLite-shell/raw/main/sqliteshell_1.1.3-1_i386.deb -o sqliteshell_1.1.3-1_i386.deb
+i386
 
-Then install it via dpkg:
+    $ curl https://github.com/CargoCodes/SQLite-shell/raw/main/sqliteshell_1.1.4-1_i386.deb -o sqliteshell_1.1.4-1_i386.deb
 
-    $ dpkg -i sqliteshell_1.1.3-1_i386.deb
+aarch64
+    
+    $ curl https://github.com/CargoCodes/SQLite-shell/raw/main/sqliteshell_1.1.4-1_aarch64.deb -o sqliteshell_1.1.4-1_aarch64.deb
+
+arm64
+
+    $ curl https://github.com/CargoCodes/SQLite-shell/raw/main/sqliteshell_1.1.4-1_arm64.deb -o sqliteshell_1.1.4-1_arm64.deb
+
+Then install it via dpkg.
+
+i386
+
+    $ dpkg -i sqliteshell_1.1.4-1_i386.deb
+
+aarch64
+    
+    $ dpkg -i sqliteshell_1.1.4-1_aarch64.deb
+
+arm64
+
+    $ dpkg -i sqliteshell_1.1.4-1_arm64.deb
 
 # Setup
     
@@ -41,3 +61,6 @@ Bug fix and error popup added
 
 ### Version 1.1.3
 Output cancellation implemented
+
+### Version 1.1.4
+Bug fix and optimisation
