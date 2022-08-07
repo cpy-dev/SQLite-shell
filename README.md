@@ -33,9 +33,9 @@ arm64
 
 # Setup
     
-Before yout start using SQLite-Shell, you have to make sure that you have the required dependencies, such as:
-    - Python3
-    - PyQt5
+Before yout start using SQLite-Shell, you have to make sure that you have the required dependencies, such as: \
+    - Python3 \
+    - PyQt5 \
     - sqlite3 (Python Package)
 
 To install the dependencies, you can run the following command
