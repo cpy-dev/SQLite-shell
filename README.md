@@ -21,15 +21,15 @@ Then install it via dpkg.
 
 i386
 
-    $ dpkg -i sqliteshell_1.1.4-1_i386.deb
+    $ sudo dpkg -i sqliteshell_1.1.4-1_i386.deb
 
 aarch64
     
-    $ dpkg -i sqliteshell_1.1.4-1_aarch64.deb
+    $ sudo dpkg -i sqliteshell_1.1.4-1_aarch64.deb
 
 arm64
 
-    $ dpkg -i sqliteshell_1.1.4-1_arm64.deb
+    $ sudo dpkg -i sqliteshell_1.1.4-1_arm64.deb
 
 # Setup
     
