@@ -52,8 +52,6 @@ On some systems you may need to gain execution permit, to do that navigate to yo
      
 Remember to enter the full file path of the database in the given space, and to press "Load" before executing any command
 
-Source code is installed in your system at /usr/local/src/sqliteshell. Please don't delete source code, it will cause SQLite-Shell to not run anymore
-
 # Updates
 ### Version 1.1.0
 Added support for multiple commands run, updated rendering system
