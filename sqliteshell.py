@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import sqlite3
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import QMessageBox
