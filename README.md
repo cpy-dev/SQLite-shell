@@ -1,6 +1,12 @@
 # SQLite-shell
 ### Lightweight cross platform SQLite shell
 
+# Installation
+
+Download teh .deb file corresponding with your system
+
+
+
 # Setup
 
     $ ./setup.sh
