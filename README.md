@@ -1,5 +1,5 @@
 # SQLite-shell
-### Lightweight cross platform open source SQLite shell
+### Lightweight cross platform open source GUI SQLite shell
 
 # Installation
 
