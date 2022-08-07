@@ -3,7 +3,7 @@
 
 # Installation
 
-Download teh .deb file corresponding with your system. Example: 
+Download the .deb file corresponding with your system. Example: 
 
     $ curl https://github.com/CargoCodes/SQLite-shell/raw/main/sqliteshell_1.1.3-1_i386.deb -o sqliteshell_1.1.3-1_i386.deb
 
