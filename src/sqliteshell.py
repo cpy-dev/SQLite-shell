@@ -1,50 +1,105 @@
 #!/usr/bin/python3
 
 import sqlite3
+import terminalpy
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import QMessageBox
 
-__version__ = '1.1.4'
+__version__ = '2.0.0'
 
-class App(QMainWindow):
+class App(QWidget):
     def __init__(self):
         super(App, self).__init__()
 
         self.db = None
         self.cmd = None
 
+        self.lastOpenedDb = None
+        self.t = terminalpy.Terminal(True)
+
+        self.checkFilesExistence()
         self.makeInterface()
+
+    def checkFilesExistence(self):
+        homePath = self.t.type('echo $HOME')
+
+        try: self.t.type(f'cd {homePath}/.sqliteshell')
+        except: self.t.type(f'mkdir {homePath}/.sqliteshell/')
+
+        try: self.t.type(f'cd {homePath}/.sqliteshell/cache')
+        except: self.t.type(f'mkdir {homePath}/.sqliteshell/cache')
+
+        try: self.t.type(f'cd {homePath}/.sqliteshell/log')
+        except: self.t.type(f'mkdir {homePath}/.sqliteshell/log')
+
+        self.t.type(f'touch {homePath}/.sqliteshell/log/sqliteshell.log')
+        self.t.type(f'touch {homePath}/.sqliteshell/cache/sqliteshell.cache')
+
+    def getLastOpenedDb(self):
+        homePath = self.t.type('echo $HOME')
+
+        with open(f'{homePath}/.sqliteshell/cache/sqliteshell.cache', 'r') as cache:
+            self.lastOpenedDb = cache.read()
+
+        print('"', self.lastOpenedDb, '"')
+
+        if self.lastOpenedDb[-1] == ' ':
+            self.lastOpenedDb = self.lastOpenedDb[0:-1]
+
+        self.filePath.setText(self.lastOpenedDb)
+        self.loadDataBase()
+
+    def saveLastOpenDb(self):
+        homePath = self.t.type('echo $HOME')
+
+        with open(f'{homePath}/.sqliteshell/cache/sqliteshell.cache', 'w') as cache:
+            cache.write(self.filePath.text())
+
+    def log(self):
+        homePath = self.t.type('echo $HOME')
+
+        with open(f'{homePath}/.sqliteshell/log/sqliteshell.log', 'a') as log:
+            log.write(self.textZone.toPlainText() + '\n')
 
     def makeInterface(self):
         self.setStyleSheet('background-color: #1F2633; color: white;')
-        self.setFixedSize(1000, 700)
+        self.resize(1000, 700)
         self.setWindowTitle('SQLite-Shell')
 
-        self.filePath = QLineEdit(self)
-        self.filePath.setPlaceholderText('File Path')
-        self.filePath.setFixedWidth(500)
-        self.filePath.move(175, 20)
+        layout = QGridLayout()
+        topLayout = QHBoxLayout()
 
-        self.loadDb = QPushButton('Load', self)
+        self.filePath = QLineEdit()
+        self.filePath.setPlaceholderText('File Path')
+        self.filePath.setStyleSheet('padding: 5px; margin: 5px;')
+        topLayout.addWidget(self.filePath, 2)
+
+        self.getLastOpenedDb()
+
+        self.loadDb = QPushButton('Load')
         self.loadDb.clicked.connect(self.loadDataBase)
-        self.loadDb.move(725, 20)
+        self.loadDb.setStyleSheet('padding: 5px; margin: 5px; margin-left: 10px')
+        topLayout.addWidget(self.loadDb, 1)
+
+        layout.addLayout(topLayout, 0, 0, 1, 2)
 
         self.textZone = QPlainTextEdit(self)
         self.textZone.setPlaceholderText('Command(s) to execute')
-        self.textZone.setFixedSize(470, 560)
-        self.textZone.move(20, 70)
-
-        self.run = QPushButton('Run Script', self)
-        self.run.setFixedWidth(470)
-        self.run.move(20, 650)
-        self.run.clicked.connect(self.render)
+        layout.addWidget(self.textZone, 1, 0)
 
         self.table = QTableWidget(self)
-        self.table.setFixedSize(470, 610)
-        self.table.move(510, 70)
+        layout.addWidget(self.table, 1, 1)
+
+        self.run = QPushButton('Run Script', self)
+        self.run.move(20, 650)
+        self.run.clicked.connect(self.render)
+        layout.addWidget(self.run, 2, 0, 1, 2)
+
+        self.setLayout(layout)
 
     def loadDataBase(self):
         self.db = sqlite3.connect(self.filePath.text())
+        self.saveLastOpenDb()
 
     def scriptAnalysis(self):
         self.cmd = self.textZone.toPlainText()
@@ -61,10 +116,11 @@ class App(QMainWindow):
 
         return cmds
 
-    def makeErrorPopup(self):
+    def makeErrorPopup(self, text):
         popup = QMessageBox()
         popup.setWindowTitle('Error Message')
-        popup.setText('Execution error: how may have made a syntax error or you may have not loaded properly you database file. Check your script and retry')
+        popup.setText('Execution error: ' + text)
+        #popup.setText('Execution error: how may have made a syntax error or you may have not loaded properly you database file. Check your script and retry')
         popup.exec_()
 
     def render(self):
@@ -73,9 +129,12 @@ class App(QMainWindow):
         if len(commands) == 1:
             try:
                 data = self.db.execute(commands[0])
-            except:
-                self.makeErrorPopup()
+            except sqlite3.OperationalError as e:
+                self.makeErrorPopup(str(e))
+            except AttributeError:
+                self.makeErrorPopup('you must load database properly. Enter full filepath and press "Load"')
             else:
+                self.log()
                 data = data.fetchall()
                 if len(data) != 0:
                     self.db.commit()
@@ -118,9 +177,12 @@ class App(QMainWindow):
             for command in commands:
                 try:
                     result = self.db.execute(command)
-                except:
-                    self.makeErrorPopup()
+                except sqlite3.OperationalError as e:
+                    self.makeErrorPopup(str(e))
+                except AttributeError:
+                    self.makeErrorPopup('you must load database properly. Enter full filepath and press "Load"')
                 else:
+                    self.log()
                     results.append(result.fetchall())
                     self.db.commit()
             maxColLength = 0
