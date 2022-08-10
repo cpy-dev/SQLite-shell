@@ -3,9 +3,7 @@
 
 # Installation
 
-Download the tar.gz file
-
-    $ 
+To download the tar.gz file [click here](https://mega.nz/file/0KFBjbIb#RkyqCvVFeJiaVI4uWZmbzt9NXdu8u4WdQm9iCHABW78)
 
 # Usage
     
@@ -30,3 +28,7 @@ Output cancellation implemented
 
 ### Version 1.1.4
 Bug fix and optimisation
+
+### Version 2.0.0 (Current version)
+Adaptive width implemented, added command's log at $HOME/.sqliteshell/log/sqliteshell.log,
+implemented last opened database autoload
