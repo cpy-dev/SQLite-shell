@@ -3,6 +3,7 @@
 
 # Installation
 
+(At the moment, the executable is available only for i386 architecture. To use the software in other machines, compile the source code using pyinstaller on your own machine, it will create a working executable)
 To download the tar.gz file [click here](https://mega.nz/file/0KFBjbIb#RkyqCvVFeJiaVI4uWZmbzt9NXdu8u4WdQm9iCHABW78)
 
 # Usage
